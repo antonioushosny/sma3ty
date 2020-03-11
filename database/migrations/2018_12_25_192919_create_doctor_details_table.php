@@ -15,10 +15,11 @@ class CreateDoctorDetailsTable extends Migration
     {
         Schema::create('doctor_details', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('clinic')->nullable($value = true);
-            $table->string('address')->nullable($value = true);
+            $table->string('title')->nullable($value = true);
+            // $table->string('address')->nullable($value = true);
+            $table->string('price')->nullable($value = true);
             $table->text('desc')->nullable($value = true);
-            $table->enum('status', ['active', 'not_active'])->default('active');
+            $table->enum('status', ['1','0'])->default('1');
             $table->unsignedBigInteger('country_id')->nullable($value = true);
             $table->foreign('country_id')->references('id')->on('countries')->onDelete('cascade'); 
             $table->unsignedBigInteger('city_id')->nullable($value = true);
@@ -27,6 +28,8 @@ class CreateDoctorDetailsTable extends Migration
             $table->foreign('area_id')->references('id')->on('areas')->onDelete('cascade'); 
             $table->unsignedBigInteger('specialties_id')->nullable($value = true);
             $table->foreign('specialties_id')->references('id')->on('specialties')->onDelete('cascade'); 
+            $table->unsignedBigInteger('user_id')->nullable($value = true);
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade'); 
             $table->timestamps();
         });
     }

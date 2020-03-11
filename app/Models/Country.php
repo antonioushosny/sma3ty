@@ -3,11 +3,18 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
-class Doc extends Model
+class Country extends Authenticatable
 {
+ 
+
     protected $fillable = [
-        'title','image','status','disc','type'
+        'name', 'image', 'status'
     ];
+
+    public function cities()
+    {
+        return $this->hasMany('App\Models\City', 'country_id', 'id');
+    }
 
     public function scopeActive($query)
     {

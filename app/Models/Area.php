@@ -3,14 +3,22 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
-class Doc extends Model
+class Area extends Authenticatable
 {
+ 
+
     protected $fillable = [
-        'title','image','status','disc','type'
+        'name', 'image', 'status','city_id'
     ];
+
+    public function city()
+    {
+        return $this->belongsTo('App\Models\City', 'city_id', 'id');
+    }
 
     public function scopeActive($query)
     {
         return $query->where('status', '1');
     }
+    
 }

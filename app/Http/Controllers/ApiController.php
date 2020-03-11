@@ -7,18 +7,19 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
 
-use App\Attendance ;
-use App\Change ;
-use App\Department ;
-use App\Discount;
-use App\Doc;
-use App\Employee;
-use App\Reward;
-use App\Task;
-use App\User;
-use App\Vacation ; 
-use App\Mac ; 
-use App\PasswordReset ; 
+use App\Models\Appointment ;
+use App\Models\Area ;
+use App\Models\Chat ;
+use App\Models\City;
+use App\Models\Country;
+use App\Models\Doc;
+use App\Models\DoctorDetail;
+use App\Models\Message;
+use App\Models\Notification;
+use App\Models\PasswordReset ; 
+use App\Models\Reservation ; 
+use App\Models\Specialties ; 
+use App\Models\User ; 
 
 use Carbon\Carbon;
 use App\Notifications\Notifications;
@@ -47,7 +48,7 @@ class ApiController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/';
     private $objuser;
     
 
@@ -105,7 +106,7 @@ class ApiController extends Controller
             "mobile"=>"required",
             "password"=>"required",
             "device_id"=>"required",
-            "device_type" => "required",  // 1 for ios , 0 for android  
+            // "device_type" => "required",  // 1 for ios , 0 for android  
         );
 
         //check the validator true or not
@@ -119,63 +120,114 @@ class ApiController extends Controller
                      'message' => $message
                 ];
             }
-            $message = 'Login failed' ;
+            $message = 'فشل في تسجيل الدخول' ;
             return  $this->FailedResponse($message , $transformed) ;
  
         }
 
-        $employee = Employee::where('mobile',$request->mobile)->first();
+        $user = User::where('mobile',$request->mobile)->first();
         // return $user;
-        if(!$employee){
+        if(!$user){
             $errors = [] ;
-            $message = 'Mobile Not Found' ;
+            $message = 'الرقم غير موجود' ;
             return  $this->FailedResponse($message , $errors) ;
  
         }
         else{
-            
-            if( $employee->status == 'not_active'  ){
-                // $errors[] =[
-                //     'message' => trans('api.allowed')
-                // ];
+            if( $user->status == '0'  ){
                 $errors = [] ;
-                $message = 'This Account Not Active' ;
+                $message = 'هذا الحساب غير مفعل' ;
                 return  $this->FailedResponse($message , $errors) ;
             }
-            if (\Hash::check( $request->password,$employee->password)) {
-                $employee->generateToken();
-                $employee->device_token = $request->device_id ;
-                $employee->type = $request->device_type ;
-                $employee->save();
-                $employee->image = asset('img/').'/'. $employee->image;
-                $message = 'Login Successfully' ;
-                return  $this->SuccessResponse($message , $employee) ;
+            if (\Hash::check( $request->password,$user->password)) {
+                $user->generateToken();
+                $user->device_token = $request->device_id ;
+                $user->type = '0' ;
+                $user->save();
+                if($user->image){$user->image = asset('img/').'/'. $user->image;}
+                $message = 'تم تسجيل الدخول بنجاح' ;
+                if($user->role == 'doctor'){
+                    $user = User::where('id',$user->id)->with('doctorDetails')->first();
+                }
+                return  $this->SuccessResponse($message , $user) ;
             }
 
             $errors = [] ;
-            $message =  'Login failed' ;
+            $message =  'فشل في تسجيل الدخول' ;
             return  $this->FailedResponse($message , $errors) ;
         }
 
     }
 //////////////////////////////////////////////
 // editprofile function 
+    public function Register(Request $request){
+
+    
+        $rules = array(  
+            "name"  => 'required',
+            "mobile"  => 'required|unique:users,mobile',
+            "email"  => 'required|email|unique:users,email',
+            "image" => 'file',
+        );
+
+        //check the validator true or not
+        $validator  = \Validator::make($request->all(),$rules);
+        if($validator->fails())
+        {
+            $messages = $validator->messages();
+            $transformed = [];
+            foreach ($messages->all() as $field => $message) {
+                $transformed[] = [
+                     'message' => $message
+                ];
+            }
+            $message = 'فشل في التسجل ' ;
+            return  $this->FailedResponse($message , $transformed) ;
+ 
+        }
+
+        $user = new User;
+        $user->name = $request->name; 
+        $user->email = $request->email; 
+        $user->mobile = $request->mobile; 
+        $user->role = 'user'; 
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $name = md5($image->getClientOriginalName() . time()) . "." . $image->getClientOriginalExtension();
+            $destinationPath = public_path('/img');
+            $image->move($destinationPath, $name);
+            $user->image   = $name;  
+        }
+        if($request->password){
+            $password = \Hash::make($request->password); 
+            $user->password   = $password;  
+        }
+        $user->save();
+         if($user->image){$user->image = asset('img/').'/'. $user->image;}
+        
+        $message = 'تم التسجيل بنجاح' ;
+        return  $this->SuccessResponse($message , $user) ;
+ 
+
+    }
+///////////////////////////////////////////////////
+// editprofile function 
     public function EditProfile(Request $request){
         // return $request ;
          $token = $request->header('token');
         if($token == ''){
- 
-            $message = trans('api.logged_out') ;
+            $message = trans('تم تسجيل الخروج') ;
             return  $this->LoggedResponse($message ) ;
-           
         }  
-        $user = Employee::where('remember_token',$token)->first();
+        $user = User::where('remember_token',$token)->first();
         if($user){      
             $rules=array(  
                 "image" => 'file',
             );
-            $user = Employee::where('id',$user->id)->first();
-
+            $user = User::where('id',$user->id)->first();
+            $user->name = $request->name; 
+            $user->email = $request->email; 
+            $user->mobile = $request->mobile; 
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
                 $name = md5($image->getClientOriginalName() . time()) . "." . $image->getClientOriginalExtension();
@@ -188,41 +240,44 @@ class ApiController extends Controller
                 $user->password   = $password;  
             }
             $user->save();
-            $user->image = asset('img/').'/'. $user->image;
-            $message = trans('api.save') ;
+            if($user->role == 'doctor'){
+                $doctorDetail  = DoctorDetail::where('user_id',$user->id)->first();
+                $doctorDetail->update($request->all());
+            }
+            if($user->role == 'doctor'){
+                $user = User::where('id',$user->id)->with('doctorDetails')->first();
+            }
+            if($user->image){$user->image = asset('img/').'/'. $user->image;}
+            $message = 'تم تعديل الصفحة الشخصية' ;
             return  $this->SuccessResponse($message , $user) ;
 
         }
         else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج' ;
             return  $this->LoggedResponse($message ) ;
         }
 
     }
 ///////////////////////////////////////////////////
 // logout function 
-    public function Logout(Request $request){
-        $token = $request->header('token');
-        
+    public function Logout(Request $request){        
         $token = $request->header('token');
         if($token == ''){
- 
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج' ;
             return  $this->LoggedResponse($message ) ;
-           
         }  
         // $token = $request->header('access_token');
-        $user = Employee::where('remember_token',$token)->first();
+        $user = User::where('remember_token',$token)->first();
         if ($user) {
             $user->remember_token = null;
             $user->device_token = null;
             $user->save();
-              
-            $message = trans('api.logout') ;
-            return  $this->SuccessResponse($message , $user) ;
+            $data = null ;
+            $message = 'تم تسجيل الخروج'  ;
+            return  $this->SuccessResponse($message , $data) ;
           
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج'  ;
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -236,18 +291,16 @@ class ApiController extends Controller
         {
             $messages = $validator->messages();
             $transformed = [];
-
             foreach ($messages->all() as $field => $message) {
                 $transformed[] = [
                     'message' => $message
                 ];
             }
-        
-            $message = trans('api.failed') ;
+            $message = 'فشل في التحقق في البيانات';
             return  $this->FailedResponse($message , $transformed) ;
         }
         $email = $request->email;
-        $user = Employee::where('email',$email)->first();
+        $user = User::where('email',$email)->first();
         if($user){
             $token = rand(100000,999999);
             $PasswordReset = PasswordReset::where('email',$user->email)->first();
@@ -257,16 +310,16 @@ class ApiController extends Controller
             $PasswordReset->email = $user->email ;
             $PasswordReset->token = $token ;
             $PasswordReset->save();
-            Employee::find($user->id)->notify(new verify_code($token));
-            $message = 'A confirmation code has been sent to your email';
+            User::find($user->id)->notify(new verify_code($token));
+            $message = 'تم إرسال رمز التأكيد إلى بريدك الإلكتروني';
             $data = null ;
             return  $this->SuccessResponse($message ,$data) ;
              
 
         }
         
-        $errors[]['message'] = 'Email Not Found';
-        $message = trans('api.failed') ;
+        $errors[]['message'] = 'البريد الإلكتروني غير موجود';
+        $message = 'فشلت العملية' ;
         return  $this->FailedResponse($message , $errors) ;
         
     }
@@ -278,12 +331,11 @@ class ApiController extends Controller
         if($code){
             $PasswordReset = PasswordReset::where('token',$code)->where('email',$email)->first();
             if($PasswordReset){
-                $user = Employee::where('email',$PasswordReset->email)->first();
+                $user = User::where('email',$PasswordReset->email)->first();
             }
-            
             else{
-                $errors[]['message'] = 'code Not Found';
-                $message = trans('api.failed') ;
+                $errors[]['message'] = "الكود غير موجود";
+                $message = 'فشلت العملية' ;
                 return  $this->FailedResponse($message , $errors) ;
                  
             }
@@ -294,38 +346,36 @@ class ApiController extends Controller
                     // $user->generateToken();
                     $user->save();
                     $PasswordReset->delete();
-                    $message = trans('api.passwordsucces');
+                    $message = 'تم تغيير كلمة المرور بنجاح';
                     $data = null ;
                     return  $this->SuccessResponse($message ,$data) ;
 
-                     
                 }
                 else{
-                  
-
-                    $errors[]['message'] = 'password requird';
-                    $message = trans('api.failed') ;
+    
+                    $errors[]['message'] = 'كلمة المرو مطلوبة ';
+                    $message = 'فشلت العملية' ;
                     return  $this->FailedResponse($message , $errors) ;
                 }
             
-            //   $mail =  Employee::find($user->id)->notify(new verify_code($user->verify_code ));
+            //   $mail =  user::find($user->id)->notify(new verify_code($user->verify_code ));
             //     return $mail;
                 
             }
-            $error = trans('api.code_notfound');
+            $error = "الكود غير موجود";
             return response()->json([
                 'success' => 'failed',
                 'errors'  => $error,
-                "message"=>trans('api.code_notfound'),
+                "message"=> "الكود غير موجود",
                 
 
             ]);
         }
-        $error = trans('api.code_required');
+        $error = "الكود غير موجود";
         return response()->json([
             'success' => 'failed',
             'errors'  => $error,
-            "message"=>trans('api.code_required'),
+            "message"=> "الكود غير موجود",
         
 
         ]);
@@ -363,7 +413,7 @@ class ApiController extends Controller
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
                 $vacation = new Vacation ;
                 $vacation->title = $request->title ;
@@ -372,7 +422,7 @@ class ApiController extends Controller
                 $vacation->days = $request->days ;
                 $vacation->type = $request->type ;
                 $vacation->notes = $request->notes ;
-                $vacation->employee_id = $user->id ;
+                $vacation->user_id = $user->id ;
                 $vacation->status =  'pending' ;
                 $vacation->save();
              
@@ -396,12 +446,12 @@ class ApiController extends Controller
                 return  $this->SuccessResponse($message,$vacation ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -438,13 +488,13 @@ class ApiController extends Controller
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
                 $change = new Change ;
                 $change->title = $request->title ;
                 $change->reason = $request->reason ;
                 $change->department_id = $request->department_id ;
-                $change->employee_id = $user->id ;
+                $change->user_id = $user->id ;
                 $change->status = 'pending' ;
                 
 
@@ -470,12 +520,12 @@ class ApiController extends Controller
                 return  $this->SuccessResponse($message,$change ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -511,12 +561,12 @@ public function ChangeMac(Request $request){
     $token = $request->header('token');
 
     if($token){
-        $user = Employee::where('remember_token',$token)->first();
+        $user = user::where('remember_token',$token)->first();
         if($user){
             $mac = new Mac ;
             $mac->mac_address = $request->mac_address ;
             $mac->reason = $request->reason ;
-            $mac->employee_id = $user->id ;
+            $mac->user_id = $user->id ;
             $mac->status = 'pending' ;
             $mac->save();
         
@@ -539,12 +589,12 @@ public function ChangeMac(Request $request){
             return  $this->SuccessResponse($message,$mac ) ;
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
         
     }else{
-        $message = trans('api.logged_out') ;
+        $message = 'تم تسجيل الخروج';
         return  $this->LoggedResponse($message ) ;
     }
 
@@ -561,9 +611,9 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
-                $vacations =  Vacation::where('employee_id',$user->id)->orderBy('id', 'desc')->get();
+                $vacations =  Vacation::where('user_id',$user->id)->orderBy('id', 'desc')->get();
                 $vacationss = [] ;
                 $i = 0 ;
                 if(sizeof($vacations) > 0){
@@ -581,16 +631,16 @@ public function ChangeMac(Request $request){
                 $data['vacations'] = $vacationss ;
                 $data['annual_vacations '] = $user->annual_vacations  ;
                 $data['accidental_vacations'] = $user->accidental_vacations ;
-                $message = trans('api.fetch') ;
+                $message = 'تم الاحضار بنجاح'  ;
                 return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -607,7 +657,7 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
                 $Departments =  Department::where('status','active')->orderBy('id', 'desc')->get();
                 $Departmentss = [] ;
@@ -622,16 +672,16 @@ public function ChangeMac(Request $request){
                 }
                 $data['departmentss'] = $Departmentss ;
                 
-                $message = trans('api.fetch') ;
+                $message = 'تم الاحضار بنجاح'  ;
                 return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -648,9 +698,9 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
-                $tasks =  Task::where('employee_id',$user->id)->orderBy('id', 'desc')->get();
+                $tasks =  Task::where('user_id',$user->id)->orderBy('id', 'desc')->get();
                 $taskss = [] ;
                 $i = 0 ;
                 if(sizeof($tasks) > 0){
@@ -666,16 +716,16 @@ public function ChangeMac(Request $request){
                 }
                 $data['taskss'] = $taskss ;
             
-                $message = trans('api.fetch') ;
+                $message = 'تم الاحضار بنجاح'  ;
                 return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -711,7 +761,7 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
                 $task = Task::where('id',$request->task_id)->first() ;
                 if($task){
@@ -738,12 +788,12 @@ public function ChangeMac(Request $request){
                 return  $this->SuccessResponse($message,$task ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -780,9 +830,9 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
-                $tasks =  Task::where('employee_id',$user->id)->whereDate('date',$request->date)->orderBy('id', 'desc')->get();
+                $tasks =  Task::where('user_id',$user->id)->whereDate('date',$request->date)->orderBy('id', 'desc')->get();
                 $taskss = [] ;
                 $i = 0 ;
                 if(sizeof($tasks) > 0){
@@ -798,16 +848,16 @@ public function ChangeMac(Request $request){
                 }
                 $data['taskss'] = $taskss ;
             
-                $message = trans('api.fetch') ;
+                $message = 'تم الاحضار بنجاح'  ;
                 return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -828,10 +878,10 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
-                $rewards =  Reward::where('employee_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->get();
-                $sumrewards =  Reward::where('employee_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->sum('amount');
+                $rewards =  Reward::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->get();
+                $sumrewards =  Reward::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->sum('amount');
                  $rewardss = [] ;
                 $i = 0 ;
                 if(sizeof($rewards) > 0){
@@ -843,8 +893,8 @@ public function ChangeMac(Request $request){
                         $i++;
                     }
                 }
-                $discounts =  Discount::where('employee_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->get();
-                $sumdiscounts =  Discount::where('employee_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->sum('amount');
+                $discounts =  Discount::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->get();
+                $sumdiscounts =  Discount::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->sum('amount');
                  $discountss = [] ;
                 $i = 0 ;
                 if(sizeof($discounts) > 0){
@@ -866,16 +916,16 @@ public function ChangeMac(Request $request){
                 $data['sumdiscounts'] = $sumdiscounts  ;
                 $data['total_salary'] = $user->net_salary + $sumrewards -  $sumdiscounts ;
             
-                $message = trans('api.fetch') ;
+                $message = 'تم الاحضار بنجاح'  ;
                 return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -913,10 +963,10 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
-                $rewards =  Reward::where('employee_id',$user->id)->whereMonth('created_at', '=', $request->month)->whereYear('created_at', '=', $year)->orderBy('id', 'desc')->get();
-                $sumrewards =  Reward::where('employee_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $request->month)->orderBy('id', 'desc')->sum('amount');
+                $rewards =  Reward::where('user_id',$user->id)->whereMonth('created_at', '=', $request->month)->whereYear('created_at', '=', $year)->orderBy('id', 'desc')->get();
+                $sumrewards =  Reward::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $request->month)->orderBy('id', 'desc')->sum('amount');
                 $rewardss = [] ;
                 $i = 0 ;
                 if(sizeof($rewards) > 0){
@@ -927,8 +977,8 @@ public function ChangeMac(Request $request){
                         $i++;
                     }
                 }
-                $discounts =  Discount::where('employee_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $request->month)->orderBy('id', 'desc')->get();
-                $sumdiscounts =  Discount::where('employee_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $request->month)->orderBy('id', 'desc')->sum('amount');
+                $discounts =  Discount::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $request->month)->orderBy('id', 'desc')->get();
+                $sumdiscounts =  Discount::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $request->month)->orderBy('id', 'desc')->sum('amount');
                 $discountss = [] ;
                 $i = 0 ;
                 if(sizeof($discounts) > 0){
@@ -949,16 +999,16 @@ public function ChangeMac(Request $request){
                 $data['sumdiscounts'] = $sumdiscounts  ;
                 $data['total_salary'] = $user->net_salary + $sumrewards -  $sumdiscounts ;
             
-                $message = trans('api.fetch') ;
+                $message = 'تم الاحضار بنجاح'  ;
                 return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -996,7 +1046,7 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
                 if($user->mac_address != $request->macAddress){
                     $errors = [] ;
@@ -1007,12 +1057,12 @@ public function ChangeMac(Request $request){
                 $doc = Doc::where('type','about')->first();
                 $distance = $this->GetDistance($request->lat,$doc->lat,$request->lng,$doc->lng,'K');
                 if($distance <= 0.3){
-                    $attend =  Attendance::whereDate('date',$date)->where('employee_id',$user->id)->first() ;
+                    $attend =  Attendance::whereDate('date',$date)->where('user_id',$user->id)->first() ;
                     if(!$attend){
                         $attend = new Attendance ;
                         $attend->date = $date ;
                         $attend->check_in = $time ;
-                        $attend->employee_id = $user->id ;
+                        $attend->user_id = $user->id ;
                         $attend->save();
                     } else{
                         $attend->check_in = $time ;
@@ -1047,12 +1097,12 @@ public function ChangeMac(Request $request){
                
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -1090,7 +1140,7 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
                 if($user->mac_address != $request->macAddress){
                     $errors = [] ;
@@ -1101,12 +1151,12 @@ public function ChangeMac(Request $request){
                 $doc = Doc::where('type','about')->first();
                 $distance = $this->GetDistance($request->lat,$doc->lat,$request->lng,$doc->lng,'K');
                 if($distance <= 0.3){
-                    $attend =  Attendance::whereDate('date',$date)->where('employee_id',$user->id)->first() ;
+                    $attend =  Attendance::whereDate('date',$date)->where('user_id',$user->id)->first() ;
                     if(!$attend){
                         $attend = new Attendance ;
                         $attend->date = $date ;
                         $attend->check_out = $time ;
-                        $attend->employee_id = $user->id ;
+                        $attend->user_id = $user->id ;
                         $attend->save();
                     } else{
                         $attend->check_out = $time ;
@@ -1141,12 +1191,12 @@ public function ChangeMac(Request $request){
             
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
     }
@@ -1166,9 +1216,9 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
-                $attendances =  Attendance::where('employee_id',$user->id)->whereYear('date', '=', $year)->whereMonth('date', '=', $month)->orderBy('id', 'desc')->get();
+                $attendances =  Attendance::where('user_id',$user->id)->whereYear('date', '=', $year)->whereMonth('date', '=', $month)->orderBy('id', 'desc')->get();
                
                 $attendancess = [] ;
                 $i = 0 ;
@@ -1187,16 +1237,16 @@ public function ChangeMac(Request $request){
                 $data['attendances'] = $attendancess ;
                 
             
-                $message = trans('api.fetch') ;
+                $message = 'تم الاحضار بنجاح'  ;
                 return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -1237,9 +1287,9 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
-                $attendances =  Attendance::where('employee_id',$user->id)->whereYear('date', '=', $year)->whereMonth('date', '=', $month)->orderBy('id', 'desc')->get();
+                $attendances =  Attendance::where('user_id',$user->id)->whereYear('date', '=', $year)->whereMonth('date', '=', $month)->orderBy('id', 'desc')->get();
             
                 $attendancess = [] ;
                 $i = 0 ;
@@ -1258,16 +1308,16 @@ public function ChangeMac(Request $request){
                 $data['attendances'] = $attendancess ;
                 
             
-                $message = trans('api.fetch') ;
+                $message = 'تم الاحضار بنجاح'  ;
                 return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -1305,9 +1355,9 @@ public function ChangeMac(Request $request){
         $token = $request->header('token');
 
         if($token){
-            $user = Employee::where('remember_token',$token)->first();
+            $user = user::where('remember_token',$token)->first();
             if($user){
-                $attendances =  Attendance::where('employee_id',$user->id)->whereDate('date', $request->date)->orderBy('id', 'desc')->get();
+                $attendances =  Attendance::where('user_id',$user->id)->whereDate('date', $request->date)->orderBy('id', 'desc')->get();
             
                 $attendancess = [] ;
                 $i = 0 ;
@@ -1325,16 +1375,16 @@ public function ChangeMac(Request $request){
                  $data['attendances'] = $attendancess ;
                 
             
-                $message = trans('api.fetch') ;
+                $message = 'تم الاحضار بنجاح'  ;
                 return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
-                $message = trans('api.logged_out') ;
+                $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
             }
             
         }else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -1347,10 +1397,10 @@ public function ChangeMac(Request $request){
          $token = $request->header('token');
           // return $token ;
         if($token == ''){
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج' ;
             return  $this->LoggedResponse($message ) ;
         }
-        $user = Employee::where('remember_token',$token)->first();
+        $user = user::where('remember_token',$token)->first();
         // $user->notify(new Notifications());
         // return $user ;
         if($user){
@@ -1358,12 +1408,12 @@ public function ChangeMac(Request $request){
             $count = count($user->unreadnotifications) ;
             // return $count ;
 
-            $message = trans('api.fetch') ;
+            $message = 'تم الاحضار بنجاح' ;
             return  $this->SuccessResponse($message , $count) ;
              
         }
         else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 
@@ -1373,10 +1423,10 @@ public function ChangeMac(Request $request){
     public function get_notification(Request $request){
          $token = $request->header('token');
         if($token == ''){
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
-        $user = Employee::where('remember_token',$token)->first();
+        $user = user::where('remember_token',$token)->first();
         // $user->notify(new Notifications());
         // return $user ;
         if($user){
@@ -1385,12 +1435,12 @@ public function ChangeMac(Request $request){
                 $note->markAsRead();
             }
             // return $count ;
-            $message = trans('api.fetch') ;
+            $message = 'تم الاحضار بنجاح'  ;
             return  $this->SuccessResponse($message , $notifications) ;
             
         }
         else{
-            $message = trans('api.logged_out') ;
+            $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
 

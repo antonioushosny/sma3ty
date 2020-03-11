@@ -19,7 +19,7 @@ class CreateDocsTable extends Migration
             $table->string('title')->nullable($value = true);
             $table->text('disc')->nullable($value = true);
             $table->string('type')->nullable($value = true);
-            $table->enum('status', ['active', 'not_active'])->default('active');
+            $table->enum('status', ['1','0'])->default('1');
             $table->timestamps();
         });
     }

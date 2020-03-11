@@ -22,7 +22,7 @@ class CreateUsersTable extends Migration
             $table->string('image')->nullable($value = true);
             $table->string('device_token')->nullable($value = true);
             $table->enum('role', ['admin','doctor','user']);    
-            $table->string('status');        
+            $table->enum('status', ['1','0'])->default('1');  
             $table->tinyInteger('type')->nullable($value = true); 
             $table->softDeletes();      
             $table->string('lang')->nullable($value = 'ar'); 

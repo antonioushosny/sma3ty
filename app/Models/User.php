@@ -29,5 +29,30 @@ class User extends Authenticatable
         $this->save();
         return $this->api_token;
     }
+
+    public function doctorDetails()
+    {
+        return $this->hasOne('App\Models\doctorDetails', 'user_id', 'id');
+    }
+
+    public function appointments()
+    {
+        return $this->hasMany('App\Models\Appointment', 'doctor_id', 'id');
+    }
+
+    public function doctorChats()
+    {
+        return $this->hasMany('App\Models\Chat', 'doctor_id', 'id');
+    }
+
+    public function userChats()
+    {
+        return $this->hasMany('App\Models\Chat', 'user_id', 'id');
+    }
+    
+    public function scopeActive($query)
+    {
+        return $query->where('status', '1');
+    }
     
 }

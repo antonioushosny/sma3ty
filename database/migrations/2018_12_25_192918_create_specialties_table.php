@@ -17,7 +17,7 @@ class CreateSpecialtiesTable extends Migration
             $table->bigIncrements('id');
             $table->string('name')->nullable($value = true);
             $table->string('image')->nullable($value = true);
-            $table->enum('status', ['active', 'not_active'])->default('active');
+            $table->enum('status', ['1','0'])->default('1');
             $table->timestamps();
         });
     }

@@ -18,7 +18,7 @@ class CreateAppointmentsTable extends Migration
             $table->string('day')->nullable($value = true);
             $table->string('from')->nullable($value = true);
             $table->string('to')->nullable($value = true);
-            $table->enum('status', ['active', 'not_active'])->default('active');
+            $table->enum('status', ['1','0'])->default('1');
             $table->unsignedBigInteger('doctor_id')->nullable($value = true);
             $table->foreign('doctor_id')->references('id')->on('users')->onDelete('cascade'); 
             $table->timestamps();
