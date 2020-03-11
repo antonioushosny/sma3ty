@@ -1,0 +1,9 @@
+version: '2'
+
+services:
+  test:
+    image: codeception/codeceptjs
+    environment:
+      - CODECEPT_ARGS=--debug --steps
+    volumes:
+      - ./integration_tests:/tests

@@ -1,0 +1,5 @@
+<?php
+return[
+    'app_id'=>'fa6406d2-77e8-4d87-a91d-2e70383f3934',
+    'token'=>'70fb5c1b9998e245e5491e14f6496c732f648aba4bb6451c69e17a6fc65e37bd076db0f4746a82a416cffef7759e17af4719735a74d86aace2db4d477ebcac10'
+];

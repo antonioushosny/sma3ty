@@ -1,0 +1,14 @@
+
+th,td {
+    text-align: center;
+}
+.navbar-custom-menu > .navbar-nav > li {
+    float: right !important;
+}
+   
+.skin-blue .sidebar-menu>li>a {
+    border-right: 3px solid transparent;
+}
+.inputrtl::placeholder {
+        text-align: left;
+    }
