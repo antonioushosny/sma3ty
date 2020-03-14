@@ -22,23 +22,16 @@ Route::post('Register', 'ApiController@Register') ;
 Route::post('EditProfile', 'ApiController@EditProfile') ;
 Route::post('ForgetPassword', 'ApiController@ForgetPassword') ;
 Route::post('ResetPassword', 'ApiController@ResetPassword') ;
-Route::post('RequestVacation', 'ApiController@RequestVacation') ;
-Route::post('ChangeDepartment', 'ApiController@ChangeDepartment') ;
-Route::post('Departments', 'ApiController@Departments') ;
-Route::post('ChangeMac', 'ApiController@ChangeMac') ;
-Route::post('Vacations', 'ApiController@Vacations') ;
-Route::post('MyTasks', 'ApiController@MyTasks') ;
-Route::post('ChangeStatus', 'ApiController@ChangeStatus') ;
-Route::post('TaskByDate', 'ApiController@TaskByDate') ;
-Route::post('Attendance', 'ApiController@Attendance') ;
-Route::post('AttendanceByMonth', 'ApiController@AttendanceByMonth') ;
-Route::post('AttendanceByDate', 'ApiController@AttendanceByDate') ;
-Route::post('CheckIn', 'ApiController@CheckIn') ;
-Route::post('CheckOut', 'ApiController@CheckOut') ;
-Route::post('Salary', 'ApiController@Salary') ;
-Route::post('SalaryForMonth', 'ApiController@SalaryForMonth') ;
-Route::post('send', 'ApiController@send') ;
-
+Route::post('homePage', 'ApiController@homePage') ;
+Route::post('Doctors', 'ApiController@Doctors') ;
+Route::post('Appointments', 'ApiController@Appointments') ;
+Route::post('MakeReservations', 'ApiController@MakeReservations') ;
+Route::post('myReservations', 'ApiController@myReservations') ;
+Route::post('SendMessage', 'ApiController@SendMessage') ;
+Route::post('Chats', 'ApiController@Chats') ;
+Route::post('Messages', 'ApiController@Messages') ;
+Route::post('AboutUs', 'ApiController@AboutUs') ;
+ 
  
 Route::post('count_notification','ApiController@count_notification') ;
 Route::post('get_notification','ApiController@get_notification') ;

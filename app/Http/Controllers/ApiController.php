@@ -382,68 +382,20 @@ class ApiController extends Controller
         
     }
 /////////////////////////////////////////////////
-// RequestVacation function 
-    public function RequestVacation(Request $request){
-        $rules=array(
-            "title"=>"required",
-            "from"=>"required",
-            "to"=>"required",
-            "days"=>"required",
-            "type"=>"required",
-        );
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        // return $date ;
-        //check the validator true or not
-        $validator  = \Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages = $validator->messages();
-            $transformed = [];
-            foreach ($messages->all() as $field => $message) {
-                $transformed[] = [
-                    'message' => $message
-                ];
-            }
-            $message = trans('api.failed') ;
-            return  $this->FailedResponse($message , $transformed) ;
- 
-        }
-       
+// homePage function 
+    public function homePage(Request $request){
         $token = $request->header('token');
-
         if($token){
             $user = user::where('remember_token',$token)->first();
             if($user){
-                $vacation = new Vacation ;
-                $vacation->title = $request->title ;
-                $vacation->from = $request->from ;
-                $vacation->to = $request->to ;
-                $vacation->days = $request->days ;
-                $vacation->type = $request->type ;
-                $vacation->notes = $request->notes ;
-                $vacation->user_id = $user->id ;
-                $vacation->status =  'pending' ;
-                $vacation->save();
-             
-                $type = "vacation";
-                // $title1 = "  مستخدم جديد قام بالتسجيل" ;
-                $msg =  "new request vacation from ".  $user->name  ;
-                
-                $admins = User::all(); 
-                if(sizeof($admins) > 0){
-                    foreach($admins as $admin){
-                        $admin->notify(new Notifications($msg,$type ));
-                        $device_token = $admin->device_token ;
-                        if($device_token){
-                            $this->notification($device_token,$msg,$msg);
-                            $this->webnotification($device_token,$msg,$msg,$type);
-                        }
-                    }
-                }
-
-                $message = trans('api.save') ;
-                return  $this->SuccessResponse($message,$vacation ) ;
+                $Specialties = Specialties::active()->select('id','name')->get() ;
+                $countries = Country::active()->select('id','name')->with('cities')->get() ;
+                $data = [] ;
+                $data['specialties'] = $Specialties ;
+                $data['countries'] = $countries ;
+              
+                $message = 'تم الاحضار بنجاح' ;
+                return  $this->SuccessResponse($message,$data ) ;
                 
             }else{
                 $message = 'تم تسجيل الخروج';
@@ -458,66 +410,110 @@ class ApiController extends Controller
 
     }
 /////////////////////////////////////////////////
-// ChangeDepartment function 
-    public function ChangeDepartment(Request $request){
-        $rules=array(
-            "title"=>"required",
-            "reason"=>"required",
-            "department_id"=>"required"
-           
-        );
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        // return $date ;
-        //check the validator true or not
-        $validator  = \Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages = $validator->messages();
-            $transformed = [];
-            foreach ($messages->all() as $field => $message) {
-                $transformed[] = [
-                    'message' => $message
-                ];
+// Doctors function 
+    public function Doctors(Request $request){
+        $token = $request->header('token');
+        if($token){
+            $user = user::where('remember_token',$token)->first();
+            if($user){
+                $doctor = User::active()->where('role','doctor') ;
+                if($request->name){
+                    $doctor = $doctor->where('name',"like","%".$request->name."%") ;
+                }
+               
+                if($request->country_id){
+                    $country_id = $request->country_id ;;
+                    $doctor = $doctor->whereHas('doctorDetails',function($query) use($country_id){
+                        $query->where('country_id',$country_id);
+                    }) ;
+                }
+                if($request->city_id){
+                    $city_id = $request->city_id ;;
+                    $doctor = $doctor->whereHas('doctorDetails',function($query) use($city_id){
+                        $query->where('city_id',$city_id);
+                    }) ;
+                }
+                if($request->area_id){
+                    $area_id = $request->area_id ;;
+                    $doctor = $doctor->whereHas('doctorDetails',function($query) use($area_id){
+                        $query->where('area_id',$area_id);
+                    }) ;
+                }
+                $doctor = $doctor->select('id','name','email','mobile')->with('doctorDetails')->first(); 
+                
+                $message = 'تم الاحضار بنجاح' ;
+                return  $this->SuccessResponse($message,$doctor ) ;
+                
+            }else{
+                $message = 'تم تسجيل الخروج';
+                return  $this->LoggedResponse($message ) ;
             }
-            $message = trans('api.failed') ;
-            return  $this->FailedResponse($message , $transformed) ;
-
+            
+        }else{
+            $message = 'تم تسجيل الخروج';
+            return  $this->LoggedResponse($message ) ;
         }
+
+
+    }
+/////////////////////////////////////////////////
+// Appointments function 
+    public function Appointments(Request $request){
+        $rules=array(
+            "doctor_id"=>"required",
+            "page"     =>"numeric|min:1"     
+        );
     
+        //check the validator true or not
+        $validator  = \Validator::make($request->all(),$rules);
+        if($validator->fails())
+        {
+            $messages = $validator->messages();
+            $transformed = [];
+            foreach ($messages->all() as $field => $message) {
+                $transformed[] = [
+                    'message' => $message
+                ];
+            }
+            $message = 'فشل في التحقق' ;
+            return  $this->FailedResponse($message , $transformed) ;
+
+        }
+        $dt = Carbon::now();
+        $date  = date('Y-m-d', strtotime($dt));
+        if($request->page){
+            $start_day = $request->page * 7 - 7 ;
+            $date = date('Y-m-d', strtotime($date . ' +'.$start_day.' day'));
+        }
+        // return $date ;
         $token = $request->header('token');
 
         if($token){
             $user = user::where('remember_token',$token)->first();
             if($user){
-                $change = new Change ;
-                $change->title = $request->title ;
-                $change->reason = $request->reason ;
-                $change->department_id = $request->department_id ;
-                $change->user_id = $user->id ;
-                $change->status = 'pending' ;
-                
-
-                $change->save();
-            
-                $type = "changedepartment";
-
-                $msg = " new request for change department from ".  $user->name  ;
-                
-                $admins = User::all(); 
-                if(sizeof($admins) > 0){
-                    foreach($admins as $admin){
-                        $admin->notify(new Notifications($msg,$type ));
-                        $device_token = $admin->device_token ;
-                        if($device_token){
-                            $this->notification($device_token,$msg,$msg);
-                            $this->webnotification($device_token,$msg,$msg,$type);
-                        }
+                $doctor = User::where('id',$request->doctor_id)->first() ;
+                if($doctor){
+                    $data = [];
+                    for($i = 0 ; $i < 7 ; $i++){
+                        $day  = date('D', strtotime($date . ' +'.$i.' day'));
+                        $newdate = date('Y-m-d', strtotime($date . ' +'.$i.' day'));
+                        // return $day ;
+                        // $reservations
+                        $appointments = Appointment::active()->where('doctor_id',$doctor->id)->where('day',$day)->whereDoesntHave('reservation')->select('id','from','to')->get();
+                        // $data[$i]['day'] = $day ;
+                        $data[$i]['date'] = $newdate ;
+                        $data[$i]['appointments'] = $appointments ;
+                        // return $date->modify('+1 day') ;
                     }
+                    
+                    $message = 'تم الاحضار بنجاح';
+                    return  $this->SuccessResponse($message,$data ) ;
                 }
+                $message = 'الدكتور غير موجود' ;
+                $transformed = [];
 
-                $message = trans('api.save') ;
-                return  $this->SuccessResponse($message,$change ) ;
+                return  $this->FailedResponse($message , $transformed) ;
+            
                 
             }else{
                 $message = 'تم تسجيل الخروج';
@@ -532,108 +528,341 @@ class ApiController extends Controller
 
     }
 /////////////////////////////////////////////////
-// ChangeMac function 
-public function ChangeMac(Request $request){
-    $rules=array(
-        "mac_address"=>"required",
-        "reason"=>"required",
-        
-    );
-    $dt = Carbon::now();
-    $date  = date('Y-m-d', strtotime($dt));
-    // return $date ;
-    //check the validator true or not
-    $validator  = \Validator::make($request->all(),$rules);
-    if($validator->fails())
-    {
-        $messages = $validator->messages();
-        $transformed = [];
-        foreach ($messages->all() as $field => $message) {
-            $transformed[] = [
-                'message' => $message
-            ];
+// MakeReservations function 
+    public function MakeReservations(Request $request){
+        $rules=array(
+            "appointment_id"=>"required",
+            "date"          => 'required',
+            
+        );
+        $dt = Carbon::now();
+        $date  = date('Y-m-d', strtotime($dt));
+        // return $date ;
+        //check the validator true or not
+        $validator  = \Validator::make($request->all(),$rules);
+        if($validator->fails())
+        {
+            $messages = $validator->messages();
+            $transformed = [];
+            foreach ($messages->all() as $field => $message) {
+                $transformed[] = [
+                    'message' => $message
+                ];
+            }
+            $message = 'فشل في التحقق' ;
+            return  $this->FailedResponse($message , $transformed) ;
+
         }
-        $message = trans('api.failed') ;
-        return  $this->FailedResponse($message , $transformed) ;
+
+        $token = $request->header('token');
+
+        if($token){
+            $user = user::where('remember_token',$token)->first();
+            if($user){
+                $appointment = Appointment::where('id',$request->appointment_id)->first() ;
+                $reservation = Reservation::where('date',$request->date)->where('appointments_id',$request->appointment_id)->first() ;
+                if($reservation){
+                    $message =' لقد تم حجز هذا الموعد ' ;
+                    $transformed = [];
+                    return  $this->FailedResponse($message , $transformed) ;
+                }
+                if($appointment){
+                    $reservation = new Reservation;
+                    $reservation->date = $request->date ;
+                    $reservation->from = $appointment->from ;
+                    $reservation->to = $appointment->to ;
+                    $reservation->doctor_id = $appointment->doctor_id ;
+                    $reservation->user_id = $user->id ;
+                    $reservation->appointments_id = $appointment->id ;
+                    $reservation->status = 'pending' ;
+                    
+                    $reservation->save();
+
+                    $type = "reservation";
+                    $msg = $user->name . " قام بحجز موعد جديد بتاريخ  ".  $request->date  ;
+                    $doctor = User::where('id',$appointment->doctor_id)->first();
+                    if($doctor){
+
+                        $doctor->notify(new Notifications($msg,$type ));
+                        $device_token = $doctor->device_token ;
+                        if($device_token){
+                            $this->notification($device_token,$msg,$msg);
+                        }
+                    }
+                    $message = 'تم حجز الموعد بنجاح' ;
+                    return  $this->SuccessResponse($message,$reservation ) ;  
+                }
+                $message =' حدث خطأ ما ' ;
+                $transformed = [];
+                return  $this->FailedResponse($message , $transformed) ;
+               
+                
+            }else{
+                $message = 'تم تسجيل الخروج';
+                return  $this->LoggedResponse($message ) ;
+            }
+            
+        }else{
+            $message = 'تم تسجيل الخروج';
+            return  $this->LoggedResponse($message ) ;
+        }
+
 
     }
-
-    $token = $request->header('token');
-
-    if($token){
-        $user = user::where('remember_token',$token)->first();
-        if($user){
-            $mac = new Mac ;
-            $mac->mac_address = $request->mac_address ;
-            $mac->reason = $request->reason ;
-            $mac->user_id = $user->id ;
-            $mac->status = 'pending' ;
-            $mac->save();
-        
-            $type = "mac";
-            $msg = " new request for change mac address from ".  $user->name  ;
+/////////////////////////////////////////////////
+// myReservations function 
+    public function myReservations(Request $request){
+        $token = $request->header('token');
+        $limit = 10;
+        if($request->page){
+            $page = $request->page * $limit - $limit ;
+        }else{
+            $page = 0 ;
+        }
+        if($token){
+            $user = user::where('remember_token',$token)->first();
+            if($user){
+                $reservations = [] ;
+                $count_all_reservations = 0 ;
+                if($user->role == 'user'){
+                    $reservations =  Reservation::where('user_id',$user->id)->skip($page)->limit($limit)->with(['doctor'=>function($query){
+                        $query->select('id','name','mobile','email') ;
+                    }])->select('id','date','from','to','doctor_id','appointments_id')->orderBy('date', 'desc')->orderBy('created_at','Desc')->get();
+                    
+                    $count_all_reservations =  Reservation::where('user_id',$user->id)->orderBy('created_at','Desc')->count('id');
+                    
+                   
+                }
+                if($user->role == 'doctor'){
+                    $reservations =  Reservation::where('doctor_id',$user->id)->skip($page)->limit($limit)->with(['user'=>function($query){
+                        $query->select('id','name','mobile','email') ;
+                    }])->select('id','date','from','to','user_id','appointments_id')->orderBy('date', 'desc')->orderBy('created_at','Desc')->get();
+                    
+                    $count_all_reservations =  Reservation::where('doctor_id',$user->id)->orderBy('created_at','Desc')->count('id');
+                    
+                }
+                $data['reservations'] = $reservations ;
+                $data['limit'] = $limit ;
+                $data['count_all_reservations'] = $count_all_reservations ;
             
-            $admins = User::all(); 
-            if(sizeof($admins) > 0){
-                foreach($admins as $admin){
-                    $admin->notify(new Notifications($msg,$type ));
-                    $device_token = $admin->device_token ;
+                $message = 'تم الاحضار بنجاح'  ;
+                return  $this->SuccessResponse($message,$data ) ;
+                
+            }else{
+                $message = 'تم تسجيل الخروج';
+                return  $this->LoggedResponse($message ) ;
+            }
+            
+        }else{
+            $message = 'تم تسجيل الخروج';
+            return  $this->LoggedResponse($message ) ;
+        }
+
+
+    }
+/////////////////////////////////////////////////
+// MakeReservations function 
+    public function SendMessage(Request $request){
+        $rules=array(
+            "recipient_id"=>"required",
+            "message"       => 'required',
+            
+        );
+        $dt = Carbon::now();
+        $date  = date('Y-m-d', strtotime($dt));
+        // return $date ;
+        //check the validator true or not
+        $validator  = \Validator::make($request->all(),$rules);
+        if($validator->fails())
+        {
+            $messages = $validator->messages();
+            $transformed = [];
+            foreach ($messages->all() as $field => $message) {
+                $transformed[] = [
+                    'message' => $message
+                ];
+            }
+            $message = 'فشل في التحقق' ;
+            return  $this->FailedResponse($message , $transformed) ;
+
+        }
+
+        $token = $request->header('token');
+
+        if($token){
+            $user = user::where('remember_token',$token)->first();
+            if($user){
+                if($user->role == 'user'){
+                   
+                    $chat = Chat::where('user_id',$user->id)->where('doctor_id',$request->recipient_id)->first() ;
+                    if(!$chat){
+                        $chat = new Chat ;
+                        $chat->doctor_id = $request->recipient_id ;
+                        $chat->user_id   = $user->id ;
+                        $chat->save();
+                    }
+
+                    $message                = new Message ;
+                    $message->chat_id       = $chat->id ; 
+                    $message->sender_id     = $user->id ; 
+                    $message->recipient_id  = $request->recipient_id ; 
+                    $message->text          = $request->message ;
+                    $message->type          = 'user' ;
+                    $message->status        = 'new';
+                    $message->save();
+                }
+                else{
+                    // $recipient = User::where('id',$request->recipient_id)->first();
+                    $chat = Chat::where('doctor_id',$user->id)->where('user_id',$request->recipient_id)->first() ;
+                    if(!$chat){
+                        $chat               = new Chat ;
+                        $chat->user_id      = $request->recipient_id ;
+                        $chat->doctor_id    = $user->id ;
+                        $chat->save();
+                    }
+
+                    $message                = new Message ;
+                    $message->chat_id       = $chat->id ; 
+                    $message->sender_id     = $user->id ; 
+                    $message->recipient_id  = $request->recipient_id ; 
+                    $message->text          = $request->message ;
+                    $message->type          = 'doctor' ;
+                    $message->status        = 'new';
+                    $message->save();
+                }
+                $recipient = User::where('id',$request->recipient_id)->first();
+                $type = "message";
+                $msg = $user->name . "ارسل رسالة جديدة لك "  ;
+                if($recipient){
+
+                    $recipient->notify(new Notifications($msg,$type ));
+                    $device_token = $recipient->device_token ;
                     if($device_token){
                         $this->notification($device_token,$msg,$msg);
-                        $this->webnotification($device_token,$msg,$msg,$type);
                     }
                 }
-            }
+                $msg = 'تم ارسال الرسالة بنجاح' ;
+                return  $this->SuccessResponse($msg,$message ) ;  
 
-            $message = trans('api.save') ;
-            return  $this->SuccessResponse($message,$mac ) ;
+            }else{
+                $message = 'تم تسجيل الخروج';
+                return  $this->LoggedResponse($message ) ;
+            }
             
         }else{
             $message = 'تم تسجيل الخروج';
             return  $this->LoggedResponse($message ) ;
         }
+
+
+    }
+///////////////////////////////////////////////
+// Chats function 
+    public function Chats(Request $request){
+
+        $token = $request->header('token');
+
+        if($token){
+            $user = user::where('remember_token',$token)->first();
+            if($user){
+                if($user->role == 'user'){
+                
+                    $chats = Chat::where('user_id',$user->id)->with(['doctor'=>function($query){
+                        $query->select('id','name','mobile','email') ;
+                    }])->select('id','user_id','doctor_id','created_at')->get() ;
+                    
+                }
+                else{
+                    // $recipient = User::where('id',$request->recipient_id)->first();
+                    $chats = Chat::where('doctor_id',$user->id)->with(['user'=>function($query){
+                        $query->select('id','name','mobile','email') ;
+                    }])->select('id','user_id','doctor_id','created_at')->get() ;
+
+                    
+                }
+                
+                $msg = 'تم الاحضار بنجاح' ;
+                return  $this->SuccessResponse($msg,$chats ) ;  
+
+            }else{
+                $message = 'تم تسجيل الخروج';
+                return  $this->LoggedResponse($message ) ;
+            }
+            
+        }else{
+            $message = 'تم تسجيل الخروج';
+            return  $this->LoggedResponse($message ) ;
+        }
+
+
+    }
+///////////////////////////////////////////////
+// Messages function 
+    public function Messages(Request $request){
+        $rules=array(
+            "chat_id"=>"required",
+            
+        );
+        $dt = Carbon::now();
+        $date  = date('Y-m-d', strtotime($dt));
+        // return $date ;
+        //check the validator true or not
+        $validator  = \Validator::make($request->all(),$rules);
+        if($validator->fails())
+        {
+            $messages = $validator->messages();
+            $transformed = [];
+            foreach ($messages->all() as $field => $message) {
+                $transformed[] = [
+                    'message' => $message
+                ];
+            }
+            $message = 'فشل في التحقق' ;
+            return  $this->FailedResponse($message , $transformed) ;
+
+        }
+        $token = $request->header('token');
+
+        if($token){
+            $user = user::where('remember_token',$token)->first();
+            if($user){
+            
+                $messages = Message::where('chat_id',$request->chat_id)->with(['sender'=>function($query){
+                    $query->select('id','name') ;
+                }])->with(['recipient'=>function($query){
+                    $query->select('id','name') ;
+                }])->orderBy('created_at','desc')->get() ;
+                
+                $msg = 'تم الاحضار بنجاح' ;
+                return  $this->SuccessResponse($msg,$messages ) ;  
+
+            }else{
+                $message = 'تم تسجيل الخروج';
+                return  $this->LoggedResponse($message ) ;
+            }
+            
+        }else{
+            $message = 'تم تسجيل الخروج';
+            return  $this->LoggedResponse($message ) ;
+        }
+
+
+    }
+///////////////////////////////////////////////
+// AboutUs function 
+    public function AboutUs(Request $request){
         
-    }else{
-        $message = 'تم تسجيل الخروج';
-        return  $this->LoggedResponse($message ) ;
-    }
-
-
-}
-/////////////////////////////////////////////////
-// Vacations function 
-    public function Vacations(Request $request){
-         
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        // return $date ;
-
         $token = $request->header('token');
 
         if($token){
             $user = user::where('remember_token',$token)->first();
             if($user){
-                $vacations =  Vacation::where('user_id',$user->id)->orderBy('id', 'desc')->get();
-                $vacationss = [] ;
-                $i = 0 ;
-                if(sizeof($vacations) > 0){
-                    foreach($vacations as $vacation){
-                        $vacationss[$i]['title']  = $vacation->title ;
-                        $vacationss[$i]['from']  = $vacation->from ;
-                        $vacationss[$i]['to']  = $vacation->to ;
-                        $vacationss[$i]['days']  = $vacation->days ;
-                        $vacationss[$i]['type']  = $vacation->type ;
-                        $vacationss[$i]['notes']  = $vacation->notes ;
-                        $vacationss[$i]['status']  = $vacation->status ;
-                        $i++;
-                    }
-                }
-                $data['vacations'] = $vacationss ;
-                $data['annual_vacations '] = $user->annual_vacations  ;
-                $data['accidental_vacations'] = $user->accidental_vacations ;
-                $message = 'تم الاحضار بنجاح'  ;
-                return  $this->SuccessResponse($message,$data ) ;
+            
+                $about = Doc::where('type','about')->select('title','disc')->first() ;
                 
+                $msg = 'تم الاحضار بنجاح' ;
+                return  $this->SuccessResponse($msg,$about ) ;  
+
             }else{
                 $message = 'تم تسجيل الخروج';
                 return  $this->LoggedResponse($message ) ;
@@ -646,751 +875,7 @@ public function ChangeMac(Request $request){
 
 
     }
-/////////////////////////////////////////////////
-// Departments function 
-    public function Departments(Request $request){
-         
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        // return $date ;
-
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                $Departments =  Department::where('status','active')->orderBy('id', 'desc')->get();
-                $Departmentss = [] ;
-                $i = 0 ;
-                if(sizeof($Departments) > 0){
-                    foreach($Departments as $Department){
-                        $Departmentss[$i]['id']  = $Department->id ;
-                        $Departmentss[$i]['title']  = $Department->title ;
-                        $Departmentss[$i]['image']  = asset('img/').'/'. $Department->image ;
-                        $i++;
-                    }
-                }
-                $data['departmentss'] = $Departmentss ;
-                
-                $message = 'تم الاحضار بنجاح'  ;
-                return  $this->SuccessResponse($message,$data ) ;
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
-// MyTasks function 
-    public function MyTasks(Request $request){
-            
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        // return $date ;
-
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                $tasks =  Task::where('user_id',$user->id)->orderBy('id', 'desc')->get();
-                $taskss = [] ;
-                $i = 0 ;
-                if(sizeof($tasks) > 0){
-                    foreach($tasks as $task){
-                        $taskss[$i]['id']  = $task->id ;
-                        $taskss[$i]['title']  = $task->title ;
-                        $taskss[$i]['date']  = $task->date ;
-                        $taskss[$i]['time']  = $task->time ;
-                        $taskss[$i]['project_name']  = $task->project_name ;
-                        $taskss[$i]['status']  = $task->status ;
-                        $i++;
-                    }
-                }
-                $data['taskss'] = $taskss ;
-            
-                $message = 'تم الاحضار بنجاح'  ;
-                return  $this->SuccessResponse($message,$data ) ;
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
-// ChangeStatus function 
-    public function ChangeStatus(Request $request){
-        $rules=array(
-            "task_id"=>"required",
-            "status"=>"required",
-            
-        );
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        // return $date ;
-        //check the validator true or not
-        $validator  = \Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages = $validator->messages();
-            $transformed = [];
-            foreach ($messages->all() as $field => $message) {
-                $transformed[] = [
-                    'message' => $message
-                ];
-            }
-            $message = trans('api.failed') ;
-            return  $this->FailedResponse($message , $transformed) ;
-
-        }
-
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                $task = Task::where('id',$request->task_id)->first() ;
-                if($task){
-                    $task->status = $request->status ;
-                    $task->save();
-
-                    $type = "ChangeTaskStatus";
-                    $msg = $user->name . " change status for task no  ".  $task->id  ;
-                
-                    $admins = User::all(); 
-                    if(sizeof($admins) > 0){
-                        foreach($admins as $admin){
-                            $admin->notify(new Notifications($msg,$type ));
-                            $device_token = $admin->device_token ;
-                            if($device_token){
-                                $this->notification($device_token,$msg,$msg);
-                                $this->webnotification($device_token,$msg,$msg,$type);
-                            }
-                        }
-                    }
-                }
-
-                $message = trans('api.save') ;
-                return  $this->SuccessResponse($message,$task ) ;
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
-// TaskByDate function 
-    public function TaskByDate(Request $request){
-        $rules=array(
-            "date"=>"required",
-             
-        );
-      
-        // return $date ;
-        //check the validator true or not
-        $validator  = \Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages = $validator->messages();
-            $transformed = [];
-            foreach ($messages->all() as $field => $message) {
-                $transformed[] = [
-                    'message' => $message
-                ];
-            }
-            $message = trans('api.failed') ;
-            return  $this->FailedResponse($message , $transformed) ;
-
-        }      
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        // return $date ;
-
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                $tasks =  Task::where('user_id',$user->id)->whereDate('date',$request->date)->orderBy('id', 'desc')->get();
-                $taskss = [] ;
-                $i = 0 ;
-                if(sizeof($tasks) > 0){
-                    foreach($tasks as $task){
-                        $taskss[$i]['id']  = $task->id ;
-                        $taskss[$i]['title']  = $task->title ;
-                        $taskss[$i]['date']  = $task->date ;
-                        $taskss[$i]['time']  = $task->time ;
-                        $taskss[$i]['project_name']  = $task->project_name ;
-                        $taskss[$i]['status']  = $task->status ;
-                        $i++;
-                    }
-                }
-                $data['taskss'] = $taskss ;
-            
-                $message = 'تم الاحضار بنجاح'  ;
-                return  $this->SuccessResponse($message,$data ) ;
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
-// Salary function 
-    public function Salary(Request $request){
-                
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-       
-        $month = date('m', strtotime($dt));
-        $monthName = date('F', mktime(0, 0, 0, $month, 10));
-       
-         $year = date('Y', strtotime($dt));
-        //  return $month ;
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                $rewards =  Reward::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->get();
-                $sumrewards =  Reward::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->sum('amount');
-                 $rewardss = [] ;
-                $i = 0 ;
-                if(sizeof($rewards) > 0){
-                    foreach($rewards as $reward){
-                        $rewardss[$i]['amount']  = $reward->amount ;
-                        $rewardss[$i]['reason']  = $reward->reason ;
-                        $rewardss[$i]['created_at']  = $reward->created_at ;
-                    
-                        $i++;
-                    }
-                }
-                $discounts =  Discount::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->get();
-                $sumdiscounts =  Discount::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $month)->orderBy('id', 'desc')->sum('amount');
-                 $discountss = [] ;
-                $i = 0 ;
-                if(sizeof($discounts) > 0){
-                    foreach($discounts as $discount){
-                        $discountss[$i]['amount']  = $discount->amount ;
-                        $discountss[$i]['reason']  = $discount->reason ;
-                        $discountss[$i]['created_at']  = $discount->created_at ;
-                    
-                        $i++;
-                    }
-                }
-                $data['month'] = $monthName ;
-                $data['rewards'] = $rewardss ;
-                $data['discounts'] = $discountss ;
-                $data['net_salary'] = $user->net_salary  ;
-                $data['cross_salary'] = $user->cross_salary  ;
-                $data['insurance '] = $user->insurance  ;
-                $data['sumrewards'] = $sumrewards  ;
-                $data['sumdiscounts'] = $sumdiscounts  ;
-                $data['total_salary'] = $user->net_salary + $sumrewards -  $sumdiscounts ;
-            
-                $message = 'تم الاحضار بنجاح'  ;
-                return  $this->SuccessResponse($message,$data ) ;
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
-// SalaryForMonth function 
-    public function SalaryForMonth(Request $request){
-        $rules=array(
-            "month"=>"required",
-             
-        );
-      
-        // return $date ;
-        //check the validator true or not
-        $validator  = \Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages = $validator->messages();
-            $transformed = [];
-            foreach ($messages->all() as $field => $message) {
-                $transformed[] = [
-                    'message' => $message
-                ];
-            }
-            $message = trans('api.failed') ;
-            return  $this->FailedResponse($message , $transformed) ;
-
-        }          
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        $monthName = date('F', mktime(0, 0, 0, $request->month, 10));
-        $year = date('Y', strtotime($dt));
-        //  return $month ;
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                $rewards =  Reward::where('user_id',$user->id)->whereMonth('created_at', '=', $request->month)->whereYear('created_at', '=', $year)->orderBy('id', 'desc')->get();
-                $sumrewards =  Reward::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $request->month)->orderBy('id', 'desc')->sum('amount');
-                $rewardss = [] ;
-                $i = 0 ;
-                if(sizeof($rewards) > 0){
-                    foreach($rewards as $reward){
-                        $rewardss[$i]['amount']  = $reward->amount ;
-                        $rewardss[$i]['reason']  = $reward->reason ;
-                    
-                        $i++;
-                    }
-                }
-                $discounts =  Discount::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $request->month)->orderBy('id', 'desc')->get();
-                $sumdiscounts =  Discount::where('user_id',$user->id)->whereYear('created_at', '=', $year)->whereMonth('created_at', '=', $request->month)->orderBy('id', 'desc')->sum('amount');
-                $discountss = [] ;
-                $i = 0 ;
-                if(sizeof($discounts) > 0){
-                    foreach($discounts as $discount){
-                        $discountss[$i]['amount']  = $discount->amount ;
-                        $discountss[$i]['reason']  = $discount->reason ;
-                    
-                        $i++;
-                    }
-                }
-                $data['month'] = $monthName ;
-                $data['rewards'] = $rewardss ;
-                $data['discounts'] = $discountss ;
-                $data['net_salary'] = $user->net_salary  ;
-                $data['cross_salary'] = $user->cross_salary  ;
-                $data['insurance '] = $user->insurance  ;
-                $data['sumrewards'] = $sumrewards  ;
-                $data['sumdiscounts'] = $sumdiscounts  ;
-                $data['total_salary'] = $user->net_salary + $sumrewards -  $sumdiscounts ;
-            
-                $message = 'تم الاحضار بنجاح'  ;
-                return  $this->SuccessResponse($message,$data ) ;
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
-// CheckIn function 
-    public function CheckIn(Request $request){
-        $rules=array(
-            "macAddress"=>"required",
-            "lat"=>"required",
-            "lng"=>"required",
- 
-        );
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        $time  = date('H:i:s', strtotime($dt));
-        // return $time ;
-        //check the validator true or not
-        $validator  = \Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages = $validator->messages();
-            $transformed = [];
-            foreach ($messages->all() as $field => $message) {
-                $transformed[] = [
-                    'message' => $message
-                ];
-            }
-            $message = trans('api.failed') ;
-            return  $this->FailedResponse($message , $transformed) ;
-
-        }
-    
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                if($user->mac_address != $request->macAddress){
-                    $errors = [] ;
-                    $message = 'Your Mac address is incorrect ' ;
-                    return  $this->FailedResponse($message , $errors) ;
-        
-                }
-                $doc = Doc::where('type','about')->first();
-                $distance = $this->GetDistance($request->lat,$doc->lat,$request->lng,$doc->lng,'K');
-                if($distance <= 0.3){
-                    $attend =  Attendance::whereDate('date',$date)->where('user_id',$user->id)->first() ;
-                    if(!$attend){
-                        $attend = new Attendance ;
-                        $attend->date = $date ;
-                        $attend->check_in = $time ;
-                        $attend->user_id = $user->id ;
-                        $attend->save();
-                    } else{
-                        $attend->check_in = $time ;
-                        $attend->save();
-                    }
-                    $type = "attendance";
-                     $msg = $user->name . "Make Check In At " .  $time  ;
-                    
-                    $admins = User::all(); 
-                    if(sizeof($admins) > 0){
-                        foreach($admins as $admin){
-                            $admin->notify(new Notifications($msg,$type ));
-                            $device_token = $admin->device_token ;
-                            if($device_token){
-                                $this->notification($device_token,$msg,$msg);
-                                $this->webnotification($device_token,$msg,$msg,$type);
-                            }
-                        }
-                    }
-    
-                    $message = trans('api.save') ;
-                    return  $this->SuccessResponse($message,$attend ) ;
-                   
-                }else{
-                    $errors = [] ;
-                    $message = "You must be present at the company's headquarters " ;
-                    return  $this->FailedResponse($message , $errors) ;
-                }
-                 
- 
-            
-               
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
-// CheckOut function 
-    public function CheckOut(Request $request){
-        $rules=array(
-            "macAddress"=>"required",
-            "lat"=>"required",
-            "lng"=>"required",
-
-        );
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-        $time  = date('H:i:s', strtotime($dt));
-        // return $time ;
-        //check the validator true or not
-        $validator  = \Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages = $validator->messages();
-            $transformed = [];
-            foreach ($messages->all() as $field => $message) {
-                $transformed[] = [
-                    'message' => $message
-                ];
-            }
-            $message = trans('api.failed') ;
-            return  $this->FailedResponse($message , $transformed) ;
-
-        }
-
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                if($user->mac_address != $request->macAddress){
-                    $errors = [] ;
-                    $message = 'Your Mac address is incorrect ' ;
-                    return  $this->FailedResponse($message , $errors) ;
-        
-                }
-                $doc = Doc::where('type','about')->first();
-                $distance = $this->GetDistance($request->lat,$doc->lat,$request->lng,$doc->lng,'K');
-                if($distance <= 0.3){
-                    $attend =  Attendance::whereDate('date',$date)->where('user_id',$user->id)->first() ;
-                    if(!$attend){
-                        $attend = new Attendance ;
-                        $attend->date = $date ;
-                        $attend->check_out = $time ;
-                        $attend->user_id = $user->id ;
-                        $attend->save();
-                    } else{
-                        $attend->check_out = $time ;
-                        $attend->save();
-                    } 	
-                    $type = "attendance";
-                    $msg = $user->name . "Make Check Out At " .  $time  ;
-                    
-                    $admins = User::all(); 
-                    if(sizeof($admins) > 0){
-                        foreach($admins as $admin){
-                            $admin->notify(new Notifications($msg,$type ));
-                            $device_token = $admin->device_token ;
-                            if($device_token){
-                                $this->notification($device_token,$msg,$msg);
-                                $this->webnotification($device_token,$msg,$msg,$type);
-                            }
-                        }
-                    }
-
-                    $message = trans('api.save') ;
-                    return  $this->SuccessResponse($message,$attend ) ;
-                
-                }else{
-                    $errors = [] ;
-                    $message = "You must be present at the company's headquarters " ;
-                    return  $this->FailedResponse($message , $errors) ;
-                }
-                
-
-            
-            
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-    }
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// Attendance function 
-    public function Attendance(Request $request){
-                    
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-    
-        $month = date('m', strtotime($dt));
-        $monthName = date('F', mktime(0, 0, 0, $month, 10));
-    
-        $year = date('Y', strtotime($dt));
-        //  return $month ;
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                $attendances =  Attendance::where('user_id',$user->id)->whereYear('date', '=', $year)->whereMonth('date', '=', $month)->orderBy('id', 'desc')->get();
-               
-                $attendancess = [] ;
-                $i = 0 ;
-                if(sizeof($attendances) > 0){
-                    foreach($attendances as $attendance){
-                        $attendancess[$i]['date']  = $attendance->date ;
-                        $attendancess[$i]['check_in']  = $attendance->check_in ;
-                        $attendancess[$i]['check_out']  = $attendance->check_out ;
-                    
-                        $i++;
-                    }
-                }
-                
-                
-                $data['month'] = $monthName ;
-                $data['attendances'] = $attendancess ;
-                
-            
-                $message = 'تم الاحضار بنجاح'  ;
-                return  $this->SuccessResponse($message,$data ) ;
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
-// AttendanceByMonth function 
-    public function AttendanceByMonth(Request $request){
-        $rules=array(
-            "month"=>"required",
-             
-        );
-      
-        // return $date ;
-        //check the validator true or not
-        $validator  = \Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages = $validator->messages();
-            $transformed = [];
-            foreach ($messages->all() as $field => $message) {
-                $transformed[] = [
-                    'message' => $message
-                ];
-            }
-            $message = trans('api.failed') ;
-            return  $this->FailedResponse($message , $transformed) ;
-
-        }            
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
-
-        $month = $request->month;
-        $monthName = date('F', mktime(0, 0, 0, $month, 10));
-
-        $year = date('Y', strtotime($dt));
-        //  return $month ;
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                $attendances =  Attendance::where('user_id',$user->id)->whereYear('date', '=', $year)->whereMonth('date', '=', $month)->orderBy('id', 'desc')->get();
-            
-                $attendancess = [] ;
-                $i = 0 ;
-                if(sizeof($attendances) > 0){
-                    foreach($attendances as $attendance){
-                        $attendancess[$i]['date']  = $attendance->date ;
-                        $attendancess[$i]['check_in']  = $attendance->check_in ;
-                        $attendancess[$i]['check_out']  = $attendance->check_out ;
-                    
-                        $i++;
-                    }
-                }
-                
-                
-                $data['month'] = $monthName ;
-                $data['attendances'] = $attendancess ;
-                
-            
-                $message = 'تم الاحضار بنجاح'  ;
-                return  $this->SuccessResponse($message,$data ) ;
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
-// AttendanceByDate function 
-    public function AttendanceByDate(Request $request){
-        $rules=array(
-            "date"=>"required",
-             
-        );
-      
-        // return $date ;
-        //check the validator true or not
-        $validator  = \Validator::make($request->all(),$rules);
-        if($validator->fails())
-        {
-            $messages = $validator->messages();
-            $transformed = [];
-            foreach ($messages->all() as $field => $message) {
-                $transformed[] = [
-                    'message' => $message
-                ];
-            }
-            $message = trans('api.failed') ;
-            return  $this->FailedResponse($message , $transformed) ;
-
-        }                  
-        $dt = Carbon::now();
-        $date  = date('Y-m-d', strtotime($dt));
- 
-        $year = date('Y', strtotime($dt));
-        //  return $month ;
-        $token = $request->header('token');
-
-        if($token){
-            $user = user::where('remember_token',$token)->first();
-            if($user){
-                $attendances =  Attendance::where('user_id',$user->id)->whereDate('date', $request->date)->orderBy('id', 'desc')->get();
-            
-                $attendancess = [] ;
-                $i = 0 ;
-                if(sizeof($attendances) > 0){
-                    foreach($attendances as $attendance){
-                        $attendancess[$i]['date']  = $attendance->date ;
-                        $attendancess[$i]['check_in']  = $attendance->check_in ;
-                        $attendancess[$i]['check_out']  = $attendance->check_out ;
-                    
-                        $i++;
-                    }
-                }
-                
-                
-                 $data['attendances'] = $attendancess ;
-                
-            
-                $message = 'تم الاحضار بنجاح'  ;
-                return  $this->SuccessResponse($message,$data ) ;
-                
-            }else{
-                $message = 'تم تسجيل الخروج';
-                return  $this->LoggedResponse($message ) ;
-            }
-            
-        }else{
-            $message = 'تم تسجيل الخروج';
-            return  $this->LoggedResponse($message ) ;
-        }
-
-
-    }
-/////////////////////////////////////////////////
+///////////////////////////////////////////////
 ///////////////////////////////////////////////////
 // count_notification function 
     public function count_notification(Request $request){
@@ -1447,10 +932,6 @@ public function ChangeMac(Request $request){
     }
 /////////////////////////////////////////////////////////
  
-/////////////////////////////////////////////////
-
-
-
 ////////////////////////////////////////////////////////
    
 }

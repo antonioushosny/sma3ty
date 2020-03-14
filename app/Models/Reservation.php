@@ -3,7 +3,7 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
-class Reservation extends Authenticatable
+class Reservation extends Model
 {
  
 

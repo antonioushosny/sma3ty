@@ -32,7 +32,7 @@ class User extends Authenticatable
 
     public function doctorDetails()
     {
-        return $this->hasOne('App\Models\doctorDetails', 'user_id', 'id');
+        return $this->hasOne('App\Models\DoctorDetail', 'user_id', 'id')->with('country')->with('city')->with('area')->with('specialties');
     }
 
     public function appointments()

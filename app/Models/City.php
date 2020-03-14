@@ -3,9 +3,8 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
-class City extends Authenticatable
+class City extends Model
 {
- 
 
     protected $fillable = [
         'name', 'image', 'status','country_id'

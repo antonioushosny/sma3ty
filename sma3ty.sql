@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.0.1
+-- version 4.8.4
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost
--- Generation Time: Mar 11, 2020 at 05:59 PM
--- Server version: 10.4.11-MariaDB
--- PHP Version: 7.2.27
+-- Host: 127.0.0.1
+-- Generation Time: Mar 14, 2020 at 02:19 PM
+-- Server version: 10.1.37-MariaDB
+-- PHP Version: 7.2.13
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
@@ -38,6 +38,54 @@ CREATE TABLE `appointments` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `appointments`
+--
+
+INSERT INTO `appointments` (`id`, `day`, `from`, `to`, `status`, `doctor_id`, `created_at`, `updated_at`) VALUES
+(1, 'Sat', '7:00', '7:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(2, 'Sat', '7:30', '8:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(3, 'Sat', '8:00', '8:15', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(4, 'Sat', '8:15', '8:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(5, 'Sat', '8:30', '8:45', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(6, 'Sat', '8:45', '9:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(7, 'Sun', '7:00', '7:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(8, 'Sun', '7:30', '8:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(9, 'Sun', '8:00', '8:15', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(10, 'Sun', '8:15', '8:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(11, 'Sun', '8:30', '8:45', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(12, 'Sun', '8:45', '9:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(13, 'Mon', '7:00', '7:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(14, 'Mon', '7:30', '8:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(15, 'Mon', '8:00', '8:15', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(16, 'Mon', '8:15', '8:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(17, 'Mon', '8:30', '8:45', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(18, 'Mon', '8:45', '9:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(19, 'Tue', '7:00', '7:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(20, 'Tue', '7:30', '8:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(21, 'Tue', '8:00', '8:15', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(22, 'Tue', '8:15', '8:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(23, 'Tue', '8:30', '8:45', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(24, 'Tue', '8:45', '9:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(25, 'Wed', '7:00', '7:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(26, 'Wed', '7:30', '8:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(27, 'Wed', '8:00', '8:15', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(28, 'Wed', '8:15', '8:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(29, 'Wed', '8:30', '8:45', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(30, 'Wed', '8:45', '9:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(31, 'Thu', '7:00', '7:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(32, 'Thu', '7:30', '8:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(33, 'Thu', '8:00', '8:15', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(34, 'Thu', '8:15', '8:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(35, 'Thu', '8:30', '8:45', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(36, 'Thu', '8:45', '9:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(37, 'Fri', '7:00', '7:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(38, 'Fri', '7:30', '8:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(39, 'Fri', '8:00', '8:15', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(40, 'Fri', '8:15', '8:30', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(41, 'Fri', '8:30', '8:45', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(42, 'Fri', '8:45', '9:00', '1', 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00');
 
 -- --------------------------------------------------------
 
@@ -76,6 +124,13 @@ CREATE TABLE `chats` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `chats`
+--
+
+INSERT INTO `chats` (`id`, `status`, `doctor_id`, `user_id`, `created_at`, `updated_at`) VALUES
+(1, '1', 1, 2, '2020-03-14 13:57:09', '2020-03-14 13:57:09');
 
 -- --------------------------------------------------------
 
@@ -132,12 +187,19 @@ CREATE TABLE `docs` (
   `id` int(10) UNSIGNED NOT NULL,
   `image` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `title` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `disc` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `disc` text COLLATE utf8mb4_unicode_ci,
   `type` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` enum('1','0') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `docs`
+--
+
+INSERT INTO `docs` (`id`, `image`, `title`, `disc`, `type`, `status`, `created_at`, `updated_at`) VALUES
+(1, NULL, 'عن التطبيق', 'سماعتي هو تطبيق يتيح للمستخدمين حجز مواعيد كشف ومتابعة الحجز كما يتيح لهم التواصل المباشر بالدكتور سواء عن طريق اجراء مكالمة او عمل شات داخل التطبيق ', 'about', '1', '2020-03-13 22:00:00', '2020-03-13 22:00:00');
 
 -- --------------------------------------------------------
 
@@ -149,7 +211,7 @@ CREATE TABLE `doctor_details` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `title` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `price` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `desc` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `desc` text COLLATE utf8mb4_unicode_ci,
   `status` enum('1','0') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '1',
   `country_id` bigint(20) UNSIGNED DEFAULT NULL,
   `city_id` bigint(20) UNSIGNED DEFAULT NULL,
@@ -178,12 +240,21 @@ CREATE TABLE `messages` (
   `chat_id` bigint(20) UNSIGNED DEFAULT NULL,
   `sender_id` bigint(20) UNSIGNED DEFAULT NULL,
   `recipient_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `text` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `text` text COLLATE utf8mb4_unicode_ci,
   `status` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'new',
   `type` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `messages`
+--
+
+INSERT INTO `messages` (`id`, `chat_id`, `sender_id`, `recipient_id`, `text`, `status`, `type`, `created_at`, `updated_at`) VALUES
+(1, 1, 1, 2, 'السلام عليكم ورحمة الله', 'new', 'doctor', '2020-03-14 13:57:09', '2020-03-14 13:57:09'),
+(2, 1, 1, 2, 'السلام عليكم ورحمة الله', 'new', 'doctor', '2020-03-14 13:57:34', '2020-03-14 13:57:34'),
+(3, 1, 2, 1, 'السلام عليكم ورحمة الله', 'new', 'user', '2020-03-14 13:59:01', '2020-03-14 13:59:01');
 
 -- --------------------------------------------------------
 
@@ -233,6 +304,16 @@ CREATE TABLE `notifications` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `notifications`
+--
+
+INSERT INTO `notifications` (`id`, `type`, `notifiable_type`, `notifiable_id`, `data`, `read_at`, `created_at`, `updated_at`) VALUES
+('190c2694-0451-4ecc-9cf4-4cf2d38cd4b0', 'App\\Notifications\\Notifications', 'App\\Models\\User', 1, '{\"data\":\"test User \\u0642\\u0627\\u0645 \\u0628\\u062d\\u062c\\u0632 \\u0645\\u0648\\u0639\\u062f \\u062c\\u062f\\u064a\\u062f \\u0628\\u062a\\u0627\\u0631\\u064a\\u062e  2020-03-14\",\"type\":\"reservation\"}', '2020-03-14 02:34:42', '2020-03-14 01:52:50', '2020-03-14 02:34:42'),
+('5744b704-fae6-4e4a-9a08-51bd188e0d9a', 'App\\Notifications\\Notifications', 'App\\Models\\User', 2, '{\"data\":\"\\u0623.\\u062f\\\\ \\u064a\\u0648\\u0633\\u0641 \\u0627\\u062d\\u0645\\u062f \\u0639\\u0644\\u064a \\u0627\\u0631\\u0633\\u0644 \\u0631\\u0633\\u0627\\u0644\\u0629 \\u062c\\u062f\\u064a\\u062f\\u0629 \\u0644\\u0643 \",\"type\":\"message\"}', NULL, '2020-03-14 13:57:36', '2020-03-14 13:57:36'),
+('5d5e4ae1-a218-4855-988b-1d99def8760a', 'App\\Notifications\\Notifications', 'App\\Models\\User', 1, '{\"data\":\"test User\\u0627\\u0631\\u0633\\u0644 \\u0631\\u0633\\u0627\\u0644\\u0629 \\u062c\\u062f\\u064a\\u062f\\u0629 \\u0644\\u0643 \",\"type\":\"message\"}', NULL, '2020-03-14 13:59:01', '2020-03-14 13:59:01'),
+('d6e05d4d-2885-4bf5-805e-c4c450af0aea', 'App\\Notifications\\Notifications', 'App\\Models\\User', 1, '{\"data\":\"test User \\u0642\\u0627\\u0645 \\u0628\\u062d\\u062c\\u0632 \\u0645\\u0648\\u0639\\u062f \\u062c\\u062f\\u064a\\u062f \\u0628\\u062a\\u0627\\u0631\\u064a\\u062e  2020-03-14\",\"type\":\"reservation\"}', '2020-03-14 02:34:42', '2020-03-14 01:54:06', '2020-03-14 02:34:42');
+
 -- --------------------------------------------------------
 
 --
@@ -265,6 +346,15 @@ CREATE TABLE `reservations` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `reservations`
+--
+
+INSERT INTO `reservations` (`id`, `date`, `from`, `to`, `status`, `doctor_id`, `user_id`, `appointments_id`, `created_at`, `updated_at`) VALUES
+(1, '2020-03-14', '7:00', '7:30', 'pending', 1, 2, 1, '2020-03-13 22:00:00', '2020-03-13 22:00:00'),
+(2, '2020-03-14', '7:30', '8:00', 'pending', 1, 2, 2, '2020-03-14 01:52:50', '2020-03-14 01:52:50'),
+(3, '2020-03-14', '8:00', '8:15', 'pending', 1, 2, 3, '2020-03-14 01:54:06', '2020-03-14 01:54:06');
 
 -- --------------------------------------------------------
 
@@ -317,8 +407,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `mobile`, `image`, `device_token`, `role`, `status`, `type`, `deleted_at`, `lang`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'أ.د\\ يوسف احمد علي ', 'ahmed@gmail.com', '$2y$10$gyKryqxSufNhnUi0pw6qL.H5uM77HBEj3Ul6LLn.4pp2tSXf25Msu', '123456789', NULL, 'fweowehksdgigslgihsghlsdkgihsdglsdig', 'doctor', '1', 0, NULL, NULL, '9OHfhrC4XxkWtKMzeUMLZCYYkyRF3p8uukGBsk8RZcsrEA6tnNpbrXWpRnWs', '2020-03-11 17:39:41', '2020-03-11 17:42:53'),
-(2, 'test User', 'test@gmail.com', '$2y$10$bZ6ARhUuGGE7l9G.bnzPoOvHQ85iHeZBZD.KWYSY.WkhQQQDonISu', '0108569754', NULL, NULL, 'user', '1', 0, NULL, NULL, NULL, '2020-03-11 17:44:23', '2020-03-11 17:52:15');
+(1, 'أ.د\\ يوسف احمد علي ', 'ahmed@gmail.com', '$2y$10$gyKryqxSufNhnUi0pw6qL.H5uM77HBEj3Ul6LLn.4pp2tSXf25Msu', '123456789', NULL, 'fweowehksdgigslgihsghlsdkgihsdglsdig', 'doctor', '1', 0, NULL, NULL, 'm6wcnX1GnYmEl4riFP8YtpLDBzaSUup3yAVAWXdghAbABeoeK56wMv8JD5F5', '2020-03-11 17:39:41', '2020-03-14 02:34:19'),
+(2, 'test User', 'test@gmail.com', '$2y$10$bZ6ARhUuGGE7l9G.bnzPoOvHQ85iHeZBZD.KWYSY.WkhQQQDonISu', '0108569754', NULL, 'fweowehksdgigslgihsghlsdkgihsdglsdig', 'user', '1', 0, NULL, NULL, 'aF0uX66BkMgVcrqraxG19AHADlzWJIs37uVq1MI9iJ5dR5lUJFxVVM7RxH0e', '2020-03-11 17:44:23', '2020-03-14 13:58:47');
 
 --
 -- Indexes for dumped tables
@@ -433,7 +523,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `appointments`
 --
 ALTER TABLE `appointments`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=43;
 
 --
 -- AUTO_INCREMENT for table `areas`
@@ -445,7 +535,7 @@ ALTER TABLE `areas`
 -- AUTO_INCREMENT for table `chats`
 --
 ALTER TABLE `chats`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `cities`
@@ -463,7 +553,7 @@ ALTER TABLE `countries`
 -- AUTO_INCREMENT for table `docs`
 --
 ALTER TABLE `docs`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `doctor_details`
@@ -475,7 +565,7 @@ ALTER TABLE `doctor_details`
 -- AUTO_INCREMENT for table `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `migrations`
@@ -493,7 +583,7 @@ ALTER TABLE `password_resets`
 -- AUTO_INCREMENT for table `reservations`
 --
 ALTER TABLE `reservations`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `specialties`
